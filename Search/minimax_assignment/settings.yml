@@ -6,3 +6,4 @@ observations_file: "observations/test_0.json"
 
 ## Player type or nature. Possible values: "ai_minimax" or "human". Default: "ai_minimax"
 player_type: "ai_minimax"
+#player_type: "human"

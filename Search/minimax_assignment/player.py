@@ -4,6 +4,7 @@ import random
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
 from fishing_game_core.shared import ACTION_TO_STR
+import sys
 
 
 class PlayerControllerHuman(PlayerController):
@@ -62,8 +63,8 @@ class PlayerControllerMinimax(PlayerController):
         :rtype: object
 
         Sample initial data:
-        { 'fish0': {'score': 11, 'type': 3}, 
-          'fish1': {'score': 2, 'type': 1}, 
+        { 'fish0': {'score': 11, 'type': 3},
+          'fish1': {'score': 2, 'type': 1},
           ...
           'fish5': {'score': -10, 'type': 4},
           'game_over': False }
@@ -86,9 +87,52 @@ class PlayerControllerMinimax(PlayerController):
         """
 
         # EDIT THIS METHOD TO RETURN BEST NEXT POSSIBLE MODE FROM MINIMAX MODEL ###
-        
+
         # NOTE: Don't forget to initialize the children of the current node 
         #       with its compute_and_get_children() method!
 
-        random_move = random.randrange(5)
-        return ACTION_TO_STR[random_move]
+        winningest_node = self.minimax(initial_tree_node, 0, 3)
+        next_node = self.traverse_up_the_tree(initial_tree_node, winningest_node)
+        return ACTION_TO_STR[next_node.move]
+
+    def traverse_up_the_tree(self, end_node, start_node):
+        current_node = start_node
+        while current_node.parent != end_node:
+            current_node = current_node.parent
+            if current_node.depth == 0:
+                return None
+        return current_node
+
+    def heuristic(self, state):
+        player1_score, player2_score = state.get_player_scores()
+        return player1_score - player2_score
+
+    def minimax(self, node, player, depth):
+#        print(depth)
+#        if node.move != None:
+#            print(ACTION_TO_STR[node.move])
+
+        if depth == 0:  # or if game is over, how do we know if game is over?
+            return node
+
+        if player == 0:
+            best_possible = float('-inf')
+            best_future_node = None
+            for child_node in node.compute_and_get_children():
+                best_node_in_child_subtree = self.minimax(child_node, 1, depth - 1)
+                value = self.heuristic(best_node_in_child_subtree.state)
+                if value > best_possible:
+                    best_possible = value
+                    best_future_node = best_node_in_child_subtree
+            return best_future_node
+
+        else:
+            best_possible = float('inf')
+            best_future_node = None
+            for child_node in node.compute_and_get_children():
+                best_node_in_child_subtree = self.minimax(child_node, 0, depth - 1)
+                value = self.heuristic(best_node_in_child_subtree.state)
+                if value < best_possible:
+                    best_possible = value
+                    best_future_node = best_node_in_child_subtree
+            return best_future_node

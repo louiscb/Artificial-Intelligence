@@ -107,12 +107,12 @@ class PlayerControllerMinimax(PlayerController):
         player1_score, player2_score = state.get_player_scores()
         return player1_score - player2_score
 
-    def minimax(self, node, player, depth):
-#        print(depth)
-#        if node.move != None:
-#            print(ACTION_TO_STR[node.move])
+    def no_fish_left(self, state):
+        return len(state.get_fish_positions()) == 0
 
-        if depth == 0:  # or if game is over, how do we know if game is over?
+    def minimax(self, node, player, depth):
+        # base case
+        if depth == 0 or self.no_fish_left(node.state):
             return node
 
         if player == 0:

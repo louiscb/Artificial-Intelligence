@@ -4,6 +4,7 @@ import random
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
 from fishing_game_core.shared import ACTION_TO_STR
+import time
 import sys
 
 
@@ -29,6 +30,8 @@ class PlayerControllerMinimax(PlayerController):
 
     def __init__(self):
         super(PlayerControllerMinimax, self).__init__()
+        self.start_time = None
+        self.LENGTH_OF_TURN = .070
 
     def player_loop(self):
         """
@@ -91,48 +94,68 @@ class PlayerControllerMinimax(PlayerController):
         # NOTE: Don't forget to initialize the children of the current node 
         #       with its compute_and_get_children() method!
 
-        winningest_node = self.minimax(initial_tree_node, 0, 3)
-        next_node = self.traverse_up_the_tree(initial_tree_node, winningest_node)
-        return ACTION_TO_STR[next_node.move]
+        if self.should_pull_fish_up(initial_tree_node):
+            return "up"
 
-    def traverse_up_the_tree(self, end_node, start_node):
-        current_node = start_node
-        while current_node.parent != end_node:
-            current_node = current_node.parent
-            if current_node.depth == 0:
-                return None
-        return current_node
+        #self.start_time = time.time()
+        winningest_node, value = self.minimax(initial_tree_node, 0, 4, float('-inf'), float('inf'))
+        return ACTION_TO_STR[winningest_node.move]
 
-    def heuristic(self, state):
+    def should_pull_fish_up(self, initial_tree_node):
+        if initial_tree_node.state.get_caught()[0] is None:
+            return False
+        fish_scores = initial_tree_node.state.get_fish_scores()
+        fish_on_player1_hook = fish_scores[initial_tree_node.state.get_caught()[0]]
+        return fish_on_player1_hook > 0
+
+    def evaluate_state(self, state):
         player1_score, player2_score = state.get_player_scores()
+        player1_currently_caught_fish, player2_currently_caught_fish = state.get_caught()
+        fish_scores = state.get_fish_scores()
+
+        # add fish currently caught on hook to score of state
+        if player1_currently_caught_fish is not None:
+            player1_score += fish_scores[player1_currently_caught_fish]
+        if player2_currently_caught_fish is not None:
+            player2_score += fish_scores[player2_currently_caught_fish]
+
         return player1_score - player2_score
 
     def no_fish_left(self, state):
         return len(state.get_fish_positions()) == 0
 
-    def minimax(self, node, player, depth):
+    def run_out_of_time(self):
+        return time.time() - self.start_time > self.LENGTH_OF_TURN
+
+    def minimax(self, node, player, depth, alpha, beta):
         # base case
         if depth == 0 or self.no_fish_left(node.state):
-            return node
+            return node, self.evaluate_state(node.state)
+        #if self.run_out_of_time() or depth == 0 or self.no_fish_left(node.state):
+        #    return node, self.evaluate_state(node.state)
 
         if player == 0:
             best_possible = float('-inf')
             best_future_node = None
             for child_node in node.compute_and_get_children():
-                best_node_in_child_subtree = self.minimax(child_node, 1, depth - 1)
-                value = self.heuristic(best_node_in_child_subtree.state)
+                best_node_in_child_subtree, value = self.minimax(child_node, 1, depth - 1, alpha, beta)
                 if value > best_possible:
                     best_possible = value
-                    best_future_node = best_node_in_child_subtree
-            return best_future_node
+                    best_future_node = child_node
+                alpha = max(alpha, best_possible)
+                if beta <= alpha:
+                    break
+            return best_future_node, best_possible
 
         else:
-            best_possible = float('inf')
-            best_future_node = None
+            worst_possible = float('inf')
+            worst_future_node = None
             for child_node in node.compute_and_get_children():
-                best_node_in_child_subtree = self.minimax(child_node, 0, depth - 1)
-                value = self.heuristic(best_node_in_child_subtree.state)
-                if value < best_possible:
-                    best_possible = value
-                    best_future_node = best_node_in_child_subtree
-            return best_future_node
+                worst_node_in_child_subtree, value = self.minimax(child_node, 0, depth - 1, alpha, beta)
+                if value < worst_possible:
+                    worst_possible = value
+                    worst_future_node = child_node
+                beta = min(beta, worst_possible)
+                if beta <= alpha:
+                    break
+            return worst_future_node, worst_possible

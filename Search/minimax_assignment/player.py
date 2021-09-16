@@ -51,7 +51,7 @@ class PlayerControllerMinimax(PlayerController):
     def __init__(self):
         super(PlayerControllerMinimax, self).__init__()
         self.start_time = None
-        self.LENGTH_OF_TURN = .065
+        self.LENGTH_OF_TURN = .055
 
     def player_loop(self):
         """
@@ -118,8 +118,18 @@ class PlayerControllerMinimax(PlayerController):
             return "up"
 
         self.start_time = time.time()
-        winningest_node, value = self.minimax(initial_tree_node, 0, 5, float('-inf'), float('inf'))
+        winningest_node = self.iterative_deepening_search(initial_tree_node, 4)
         return ACTION_TO_STR[winningest_node.move]
+
+    def iterative_deepening_search(self, initial_tree_node, initial_depth):
+        winningest_node = None
+        search_depth = initial_depth
+        while True:
+            try:
+                winningest_node = self.minimax(initial_tree_node, 0, search_depth, float('-inf'), float('inf'))[0]
+                search_depth += 1
+            except:
+                return winningest_node
 
     def should_pull_fish_up(self, initial_tree_node):
         if initial_tree_node.state.get_caught()[0] is None:
@@ -132,11 +142,13 @@ class PlayerControllerMinimax(PlayerController):
         return len(state.get_fish_positions()) == 0
 
     def run_out_of_time(self):
-        return time.time() - self.start_time > self.LENGTH_OF_TURN
+        if time.time() - self.start_time > self.LENGTH_OF_TURN:
+            raise TimeoutError
 
     def minimax(self, node, player, depth, alpha, beta):
+        self.run_out_of_time()
         # base case
-        if self.run_out_of_time() or depth == 0 or self.no_fish_left(node.state):
+        if depth == 0 or self.no_fish_left(node.state):
             return node, evaluate_state(node)
 
         if player == 0:

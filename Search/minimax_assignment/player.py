@@ -26,12 +26,32 @@ class PlayerControllerHuman(PlayerController):
                 return
 
 
+def evaluate_state(node):
+    player1_score, player2_score = node.state.get_player_scores()
+    player1_currently_caught_fish, player2_currently_caught_fish = node.state.get_caught()
+    fish_scores = node.state.get_fish_scores()
+
+    # add fish currently caught on hook to score of state
+    if player1_currently_caught_fish is not None:
+        player1_score += fish_scores[player1_currently_caught_fish]
+    if player2_currently_caught_fish is not None:
+        player2_score += fish_scores[player2_currently_caught_fish]
+
+    return player1_score - player2_score
+
+
+def sort_list(list_of_children, desc):
+    if list_of_children is not None:
+        list_of_children.sort(key=evaluate_state, reverse=desc)
+    return list_of_children
+
+
 class PlayerControllerMinimax(PlayerController):
 
     def __init__(self):
         super(PlayerControllerMinimax, self).__init__()
         self.start_time = None
-        self.LENGTH_OF_TURN = .070
+        self.LENGTH_OF_TURN = .065
 
     def player_loop(self):
         """
@@ -59,7 +79,7 @@ class PlayerControllerMinimax(PlayerController):
 
     def initialize_model(self, initial_data):
         """
-        Initialize your minimax model 
+        Initialize your minimax model
         :param initial_data: Game data for initializing minimax model
         :type initial_data: dict
         :return: Minimax model
@@ -82,8 +102,8 @@ class PlayerControllerMinimax(PlayerController):
         Use your minimax model to find best possible next move for player 0 (green boat)
         :param model: Minimax model
         :type model: object
-        :param initial_tree_node: Initial game tree node 
-        :type initial_tree_node: game_tree.Node 
+        :param initial_tree_node: Initial game tree node
+        :type initial_tree_node: game_tree.Node
             (see the Node class in game_tree.py for more information!)
         :return: either "stay", "left", "right", "up" or "down"
         :rtype: str
@@ -91,14 +111,14 @@ class PlayerControllerMinimax(PlayerController):
 
         # EDIT THIS METHOD TO RETURN BEST NEXT POSSIBLE MODE FROM MINIMAX MODEL ###
 
-        # NOTE: Don't forget to initialize the children of the current node 
+        # NOTE: Don't forget to initialize the children of the current node
         #       with its compute_and_get_children() method!
 
         if self.should_pull_fish_up(initial_tree_node):
             return "up"
 
-        #self.start_time = time.time()
-        winningest_node, value = self.minimax(initial_tree_node, 0, 4, float('-inf'), float('inf'))
+        self.start_time = time.time()
+        winningest_node, value = self.minimax(initial_tree_node, 0, 5, float('-inf'), float('inf'))
         return ACTION_TO_STR[winningest_node.move]
 
     def should_pull_fish_up(self, initial_tree_node):
@@ -108,19 +128,6 @@ class PlayerControllerMinimax(PlayerController):
         fish_on_player1_hook = fish_scores[initial_tree_node.state.get_caught()[0]]
         return fish_on_player1_hook > 0
 
-    def evaluate_state(self, state):
-        player1_score, player2_score = state.get_player_scores()
-        player1_currently_caught_fish, player2_currently_caught_fish = state.get_caught()
-        fish_scores = state.get_fish_scores()
-
-        # add fish currently caught on hook to score of state
-        if player1_currently_caught_fish is not None:
-            player1_score += fish_scores[player1_currently_caught_fish]
-        if player2_currently_caught_fish is not None:
-            player2_score += fish_scores[player2_currently_caught_fish]
-
-        return player1_score - player2_score
-
     def no_fish_left(self, state):
         return len(state.get_fish_positions()) == 0
 
@@ -129,15 +136,13 @@ class PlayerControllerMinimax(PlayerController):
 
     def minimax(self, node, player, depth, alpha, beta):
         # base case
-        if depth == 0 or self.no_fish_left(node.state):
-            return node, self.evaluate_state(node.state)
-        #if self.run_out_of_time() or depth == 0 or self.no_fish_left(node.state):
-        #    return node, self.evaluate_state(node.state)
+        if self.run_out_of_time() or depth == 0 or self.no_fish_left(node.state):
+            return node, evaluate_state(node)
 
         if player == 0:
             best_possible = float('-inf')
             best_future_node = None
-            for child_node in node.compute_and_get_children():
+            for child_node in sort_list(node.compute_and_get_children(), True):
                 best_node_in_child_subtree, value = self.minimax(child_node, 1, depth - 1, alpha, beta)
                 if value > best_possible:
                     best_possible = value
@@ -150,7 +155,7 @@ class PlayerControllerMinimax(PlayerController):
         else:
             worst_possible = float('inf')
             worst_future_node = None
-            for child_node in node.compute_and_get_children():
+            for child_node in sort_list(node.compute_and_get_children(), False):
                 worst_node_in_child_subtree, value = self.minimax(child_node, 0, depth - 1, alpha, beta)
                 if value < worst_possible:
                     worst_possible = value

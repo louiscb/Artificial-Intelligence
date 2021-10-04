@@ -2,8 +2,19 @@ import sys
 
 
 def main():
-    read_data()
+    transition_matrix, emission_matrix, initial_state_distribution = read_data()
+    predict_next_observations(transition_matrix, emission_matrix, initial_state_distribution)
 
+def predict_next_observations(transition_matrix, emission_matrix, initial_state_distribution):
+    next_state_distribution = calculate_next_state_distribution(initial_state_distribution, transition_matrix)
+    observation_distribution = calculate_observation_distribution(next_state_distribution, emission_matrix)
+    return observation_distribution
+
+def calculate_observation_distribution(next_state_distribution, emission_matrix):
+    pass
+
+def calculate_next_state_distribution(current_state_distribution, transition_matrix):
+    return None
 
 def read_data():
     lines = []
@@ -13,8 +24,20 @@ def read_data():
 
 
 def create_matrix(input_line):
-    rows = input_line[0]
-    columns = input_line[1]
+    input_line = input_line.split()
+    rows = int(input_line[0])
+    columns = int(input_line[1])
+    val_counter = 2
+    matrix = []
+    for i in range(rows):
+        column = []
+        for j in range(columns):
+            column.append(float(input_line[val_counter]))
+            val_counter += 1
+        matrix.append(column)
+    return matrix
+
+
 
 
 main()

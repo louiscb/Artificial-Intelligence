@@ -1,20 +1,46 @@
 import sys
+from decimal import *
 
 
 def main():
     transition_matrix, emission_matrix, initial_state_distribution = read_data()
-    predict_next_observations(transition_matrix, emission_matrix, initial_state_distribution)
+    next_observation_distribution = predict_next_observations(transition_matrix, emission_matrix, initial_state_distribution)
+    print_ans(next_observation_distribution)
+
+def print_ans(matrix):
+    print(len(matrix), len(matrix[0]), end=' ')
+    for row in matrix:
+        for element in row:
+            print(str(element), end=' ')
+
 
 def predict_next_observations(transition_matrix, emission_matrix, initial_state_distribution):
-    next_state_distribution = calculate_next_state_distribution(initial_state_distribution, transition_matrix)
-    observation_distribution = calculate_observation_distribution(next_state_distribution, emission_matrix)
+    next_state_distribution = matrix_multiplication(initial_state_distribution, transition_matrix)
+    observation_distribution = matrix_multiplication(next_state_distribution, emission_matrix)
     return observation_distribution
 
-def calculate_observation_distribution(next_state_distribution, emission_matrix):
-    pass
+def matrix_multiplication(m1, m2):
+    assert len(m1[0]) == len(m2)
+    result = []
+    for i in range(len(m1)):
+        row = []
+        for j in range(len(m2[0])):
+            row.append(dot_product(m1[i], get_column(m2, j)))
+        result.append(row)
+    return result
 
-def calculate_next_state_distribution(current_state_distribution, transition_matrix):
-    return None
+def dot_product(l1, l2):
+    assert len(l1) == len(l2)
+    sum = Decimal(0)
+    for i in range(len(l1)):
+        sum += l1[i] * l2[i]
+    return sum
+def get_column(matrix, axis):
+    rows = len(matrix)
+    column = []
+    for i in range(rows):
+        column.append(matrix[i][axis])
+    return column
 
 def read_data():
     lines = []
@@ -32,7 +58,7 @@ def create_matrix(input_line):
     for i in range(rows):
         column = []
         for j in range(columns):
-            column.append(float(input_line[val_counter]))
+            column.append(Decimal(input_line[val_counter]))
             val_counter += 1
         matrix.append(column)
     return matrix

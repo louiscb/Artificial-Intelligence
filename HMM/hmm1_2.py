@@ -55,33 +55,6 @@ def update_sigma(sigma, transition_matrix, emission_matrix, observation):
     return new_sigma, new_sigma_index
 
 
-def update_alpha(alpha, transition_matrix, emission_matrix, observation):
-    new_alpha = []
-    for i in range(len(alpha)):
-        state_prob = 0
-        for j in range(len(transition_matrix)):
-            state_prob += transition_matrix[j][i] * alpha[j]
-        new_alpha.append(state_prob)
-    return element_wise_multiplication(get_column(emission_matrix, observation), new_alpha)
-
-
-def index_of_max_and_value(l1):
-    index = 0
-    max = -1
-    for i, val in enumerate(l1):
-        if val > max:
-            max = val
-            index = i
-    return index, max
-
-
-def initialize_alpha(initial_state_distribution, emission_matrix, first_observation):
-    # emission_matrix holds the conditional distributions, multiplied by the state_distribution we are conditioning on
-    # results in the joint distribution. For each state, with Observation = first_observation.
-    relevant_observation_probabilities = get_column(emission_matrix, first_observation)
-    joint_pdf_state_and_observation = element_wise_multiplication(initial_state_distribution[0],
-                                                                  relevant_observation_probabilities)
-    return joint_pdf_state_and_observation
 
 
 main()

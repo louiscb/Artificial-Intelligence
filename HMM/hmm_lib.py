@@ -16,6 +16,25 @@ def hmm0():
     print_ans(next_observation_distribution)
 
 
+def update_alpha(alpha, transition_matrix, emission_matrix, observation):
+    new_alpha = []
+    for i in range(len(alpha)):
+        state_prob = 0
+        for j in range(len(transition_matrix)):
+            state_prob += transition_matrix[j][i] * alpha[j]
+        new_alpha.append(state_prob)
+    return element_wise_multiplication(get_column(emission_matrix, observation), new_alpha)
+
+
+def initialize_alpha(initial_state_distribution, emission_matrix, first_observation):
+    # emission_matrix holds the conditional distributions, multiplied by the state_distribution we are conditioning on
+    # results in the joint distribution. For each state, with Observation = first_observation.
+    relevant_observation_probabilities = get_column(emission_matrix, first_observation)
+    joint_pdf_state_and_observation = element_wise_multiplication(initial_state_distribution[0],
+                                                                  relevant_observation_probabilities)
+    return joint_pdf_state_and_observation
+
+
 def predict_next_observations(transition_matrix, emission_matrix, current_state_distribution):
     next_state_distribution = matrix_multiplication(current_state_distribution, transition_matrix)
     observation_distribution = matrix_multiplication(next_state_distribution, emission_matrix)
@@ -61,6 +80,16 @@ def get_column(matrix, axis):
     for i in range(rows):
         column.append(matrix[i][axis])
     return column
+
+
+def index_of_max_and_value(l1):
+    index = 0
+    max = -1
+    for i, val in enumerate(l1):
+        if val > max:
+            max = val
+            index = i
+    return index, max
 
 
 def read_data():

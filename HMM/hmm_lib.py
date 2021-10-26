@@ -1,12 +1,11 @@
 import sys
-from decimal import *
 
 
 def print_ans(matrix):
     print(len(matrix), len(matrix[0]), end=' ')
     for row in matrix:
         for element in row:
-            print(str(element), end=' ')
+            print(str(round(element, 6)), end=' ')
 
 
 def hmm0():
@@ -61,7 +60,7 @@ def element_wise_multiplication(l1, l2):
 
 def dot_product(l1, l2):
     assert len(l1) == len(l2)
-    sum = Decimal(0)
+    sum = 0
     for i in range(len(l1)):
         sum += l1[i] * l2[i]
     return sum
@@ -118,7 +117,7 @@ def create_matrix(input_line):
     for i in range(rows):
         column = []
         for j in range(columns):
-            column.append(Decimal(input_line[val_counter]))
+            column.append(float(input_line[val_counter]))
             val_counter += 1
         matrix.append(column)
     return matrix
